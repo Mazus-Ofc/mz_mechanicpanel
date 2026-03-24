@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mz_mechanicpanel</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="root" class="hidden">
+    <div class="overlay"></div>
+    <aside class="panel">
+      <header class="panel-header">
+        <div>
+          <div class="eyebrow">MECHANIC PANEL</div>
+          <h1 id="vehicleLabel">Veículo</h1>
+          <div class="muted" id="vehicleMeta">Placa</div>
+        </div>
+        <button class="ghost close-btn" id="closeBtn">×</button>
+      </header>
+
+      <section class="hero-card">
+        <div class="hero-left">
+          <div class="shop-label" id="shopLabel">Oficina</div>
+          <div class="owner-line">Cliente: <span id="ownerLabel">Cliente</span></div>
+        </div>
+        <div class="hero-price">
+          <span>Total</span>
+          <strong id="totalPrice">$0</strong>
+        </div>
+      </section>
+
+      <section class="stats-grid" id="statsGrid"></section>
+
+      <nav class="category-tabs" id="categoryTabs"></nav>
+
+      <section class="sections-area" id="sectionsArea"></section>
+
+      <footer class="panel-footer">
+        <div class="summary-grid">
+          <div class="summary-card">
+            <span>Peças</span>
+            <strong id="subtotalPrice">$0</strong>
+          </div>
+          <div class="summary-card">
+            <span>Mão de obra</span>
+            <strong id="laborPrice">$0</strong>
+          </div>
+        </div>
+        <div class="action-row">
+          <button class="ghost" id="rotateLeftBtn">⟲</button>
+          <button class="ghost" id="rotateRightBtn">⟳</button>
+          <button class="ghost" id="zoomInBtn">＋</button>
+          <button class="ghost" id="zoomOutBtn">－</button>
+          <button class="danger" id="cancelBtn">Cancelar</button>
+          <button class="primary" id="finishBtn">Enviar orçamento</button>
+        </div>
+        <div class="waiting-badge hidden" id="waitingBadge">Aguardando aprovação do proprietário…</div>
+      </footer>
+    </aside>
+  </div>
+
+  <div id="ownerApprovalModal" class="approval hidden">
+    <div class="approval-card">
+      <div class="approval-eyebrow">APROVAÇÃO DE SERVIÇO</div>
+      <h2 id="approvalTitle">Oficina</h2>
+      <p id="approvalSubtitle">Detalhes</p>
+      <div class="approval-summary">
+        <div><span>Peças</span><strong id="approvalSubtotal">$0</strong></div>
+        <div><span>Mão de obra</span><strong id="approvalLabor">$0</strong></div>
+        <div class="approval-total"><span>Total</span><strong id="approvalTotal">$0</strong></div>
+      </div>
+      <div class="approval-lines" id="approvalLines"></div>
+      <div class="approval-actions">
+        <button class="danger" id="approvalDecline">Recusar</button>
+        <button class="primary" id="approvalAccept">Pagar e aprovar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
