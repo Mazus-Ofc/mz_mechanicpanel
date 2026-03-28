@@ -70,10 +70,10 @@ Config.RepairItems = {
 
 Config.WindowTints = {
     { id = 0, label = 'Sem Insulfilm' },
-    { id = 1, label = 'Leve' },
-    { id = 2, label = 'Médio' },
-    { id = 3, label = 'Escuro' },
-    { id = 4, label = 'Muito Escuro' },
+    { id = 1, label = 'Muito Escuro' },
+    { id = 2, label = 'Escuro' },
+    { id = 3, label = 'Médio' },
+    { id = 4, label = 'Leve' },
     { id = 5, label = 'Limousine' },
     { id = 6, label = 'Verde' },
 }
@@ -88,18 +88,18 @@ Config.PlateIndexes = {
 }
 
 Config.XenonPresets = {
-    { id = 255, label = 'Branco Padrão' },
-    { id = 0, label = 'Azul' },
-    { id = 1, label = 'Elétrico' },
-    { id = 2, label = 'Verde Menta' },
-    { id = 3, label = 'Verde Lima' },
-    { id = 4, label = 'Amarelo' },
-    { id = 5, label = 'Dourado' },
-    { id = 6, label = 'Laranja' },
-    { id = 7, label = 'Vermelho' },
-    { id = 8, label = 'Rosa' },
-    { id = 9, label = 'Roxo' },
-    { id = 10, label = 'Preto' },
+    { id = 255, label = 'Branco Padrão', hex = '#f5f7ff' },
+    { id = 0, label = 'Azul', hex = '#3b82f6' },
+    { id = 1, label = 'Elétrico', hex = '#60a5fa' },
+    { id = 2, label = 'Verde Menta', hex = '#34d399' },
+    { id = 3, label = 'Verde Lima', hex = '#84cc16' },
+    { id = 4, label = 'Amarelo', hex = '#facc15' },
+    { id = 5, label = 'Dourado', hex = '#f59e0b' },
+    { id = 6, label = 'Laranja', hex = '#f97316' },
+    { id = 7, label = 'Vermelho', hex = '#ef4444' },
+    { id = 8, label = 'Rosa', hex = '#ec4899' },
+    { id = 9, label = 'Roxo', hex = '#8b5cf6' },
+    { id = 10, label = 'Preto', hex = '#111827' },
 }
 
 Config.NeonPresets = {

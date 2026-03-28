@@ -128,7 +128,7 @@ function EnsureMechanicPanelSchema()
     ensureIndex('mechanic_service_logs', 'idx_mechanic_service_logs_status', 'INDEX `idx_mechanic_service_logs_status` (`status`)')
 end
 
-CreateThread(function()
-    Wait(1000)
-    EnsureMechanicPanelSchema()
-end)
+--CreateThread(function()
+--    Wait(1000)
+--    EnsureMechanicPanelSchema()
+--end)

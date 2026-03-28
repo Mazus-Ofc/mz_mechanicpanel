@@ -103,6 +103,31 @@ function MechanicShared.GetCurrency(value)
     return (symbol .. tostring(addMoney(value)))
 end
 
+
+local function normalizeServiceStateForQuote(originalState, currentState)
+    local normalizedCurrent = json.decode(json.encode(currentState or {})) or {}
+    local fullSelected = normalizedCurrent.service_full == true
+
+    local allIndividuals = normalizedCurrent.service_engine == true
+        and normalizedCurrent.service_body == true
+        and normalizedCurrent.service_tires == true
+        and normalizedCurrent.service_clean == true
+
+    if allIndividuals then
+        fullSelected = true
+    end
+
+    if fullSelected then
+        normalizedCurrent.service_full = true
+        normalizedCurrent.service_engine = false
+        normalizedCurrent.service_body = false
+        normalizedCurrent.service_tires = false
+        normalizedCurrent.service_clean = false
+    end
+
+    return originalState or {}, normalizedCurrent
+end
+
 function MechanicShared.CalculateLine(sectionKey, fromValue, toValue)
     local section = MechanicShared.Sections[sectionKey]
     if not section then return nil end
@@ -153,6 +178,7 @@ end
 
 function MechanicShared.BuildQuote(originalState, currentState, laborMultiplier)
     laborMultiplier = laborMultiplier or 1.0
+    originalState, currentState = normalizeServiceStateForQuote(originalState, currentState)
 
     local lines = {}
     local subtotal = 0

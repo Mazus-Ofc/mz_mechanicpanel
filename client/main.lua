@@ -407,7 +407,7 @@ local function buildSectionPayload(vehicle)
                     include = true
                     entry.options[#entry.options + 1] = { value = { enabled = false, preset = 255, custom = false, hex = '#ffffff' }, label = 'Desativado' }
                     for _, preset in ipairs(Config.XenonPresets) do
-                        entry.options[#entry.options + 1] = { value = { enabled = true, preset = preset.id, custom = false, hex = '#ffffff' }, label = preset.label }
+                        entry.options[#entry.options + 1] = { value = { enabled = true, preset = preset.id, custom = false, hex = preset.hex or '#ffffff' }, label = preset.label, hex = preset.hex }
                     end
                     entry.allowCustomColor = true
                 elseif section.mode == 'neon' then
@@ -582,6 +582,7 @@ local function sendUiUpdate()
         action = 'summary',
         quote = state.quote,
         currentState = state.currentState,
+        stats = state.vehicle and DoesEntityExist(state.vehicle) and getVehicleStats(state.vehicle) or nil,
     })
 end
 
@@ -701,6 +702,31 @@ local function updateSectionValue(sectionKey, rawValue)
         else
             state.currentState[sectionKey] = rawValue
         end
+    elseif section.mode == 'serviceToggle' then
+        local enabled = rawValue == true
+
+        if sectionKey == 'service_full' then
+            state.currentState.service_full = enabled
+            if enabled then
+                state.currentState.service_engine = false
+                state.currentState.service_body = false
+                state.currentState.service_tires = false
+                state.currentState.service_clean = false
+            end
+        else
+            state.currentState[sectionKey] = enabled
+            if enabled and state.currentState.service_full then
+                state.currentState.service_full = false
+            end
+
+            if state.currentState.service_engine and state.currentState.service_body and state.currentState.service_tires and state.currentState.service_clean then
+                state.currentState.service_full = true
+                state.currentState.service_engine = false
+                state.currentState.service_body = false
+                state.currentState.service_tires = false
+                state.currentState.service_clean = false
+            end
+        end
     elseif section.mode == 'neon' then
         if rawValue.customHex then
             state.currentState[sectionKey] = { left = true, right = true, front = true, back = true, hex = rawValue.customHex }
@@ -729,6 +755,7 @@ local function applyServiceActions(vehicle)
         SetVehicleEngineHealth(vehicle, 1000.0)
         SetVehicleBodyHealth(vehicle, 1000.0)
         SetVehiclePetrolTankHealth(vehicle, 1000.0)
+        for i = 0, 7 do SetVehicleTyreFixed(vehicle, i) end
     else
         if state.currentState.service_engine then
             SetVehicleEngineHealth(vehicle, 1000.0)
@@ -741,7 +768,7 @@ local function applyServiceActions(vehicle)
             for i = 0, 7 do SetVehicleTyreFixed(vehicle, i) end
         end
     end
-    if state.currentState.service_clean then
+    if state.currentState.service_clean or state.currentState.service_full then
         SetVehicleDirtLevel(vehicle, 0.0)
     end
 end
@@ -753,7 +780,8 @@ RegisterNUICallback('previewChange', function(data, cb)
         ok = true,
         quote = state.quote,
         currentState = state.currentState,
-        categories = buildSectionPayload(state.vehicle)
+        categories = buildSectionPayload(state.vehicle),
+        stats = getVehicleStats(state.vehicle)
     })
 end)
 

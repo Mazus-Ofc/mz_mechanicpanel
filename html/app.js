@@ -29,6 +29,7 @@ let state = {
   currentState: {},
   quote: null,
   ownerRequestId: null,
+  stats: { speed: 0, acceleration: 0, brakes: 0, traction: 0 },
 };
 
 const iconMap = {
@@ -48,6 +49,10 @@ const iconMap = {
   xenon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h6M7 9l4 3-4 3"/><path d="M13 8h6M15 5l4 3-4 3"/><path d="M13 16h6M15 13l4 3-4 3"/></svg>',
   extras: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/><circle cx="12" cy="12" r="9"/></svg>',
   service: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 7a4 4 0 1 0-5.6 5.6L17 21l4-4-8.4-8.4A4 4 0 0 0 14 7z"/></svg>',
+  repair: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 7a4 4 0 1 0-5.6 5.6L17 21l4-4-8.4-8.4A4 4 0 0 0 14 7z"/></svg>',
+  repairfull: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h6"/><path d="M14 12h6"/><path d="M12 4v6"/><path d="M12 14v6"/><circle cx="12" cy="12" r="3"/></svg>',
+  clean: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 18c0 1.1.9 2 2 2h6a2 2 0 0 0 2-2v-1H7z"/><path d="M6 10h12l-1 7H7z"/><path d="M9 4h6l1 3H8z"/></svg>',
+  tire: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>',
   tint: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v14H4z"/><path d="M8 5v14"/></svg>',
   plate: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="7" width="16" height="10" rx="2"/><path d="M8 11h8"/></svg>',
 };
@@ -110,12 +115,18 @@ function renderTabs() {
   });
 }
 
+function isServiceFullActive() {
+  return state.currentState?.service_full === true;
+}
+
 function renderSelectSection(section) {
   const current = state.currentState[section.key];
+  const fullServiceActive = isServiceFullActive();
+  const serviceDisabled = section.mode === 'serviceToggle' && fullServiceActive && section.key !== 'service_full';
   const options = section.options.map(option => {
     const active = eq(option.value, current);
     const colorStyle = option.hex ? `style="box-shadow: inset 0 0 0 999px ${option.hex}; border-color: rgba(255,255,255,0.12);"` : '';
-    return `<button class="select-chip ${active ? 'active' : ''}" data-section="${section.key}" data-value='${encodeURIComponent(JSON.stringify(option.value))}'>
+    return `<button class="select-chip ${active ? 'active' : ''} ${serviceDisabled ? 'disabled' : ''}" ${serviceDisabled ? 'disabled' : ''} data-section="${section.key}" data-value='${encodeURIComponent(JSON.stringify(option.value))}'>
       ${option.hex ? `<span class="color-swatch" ${colorStyle}></span>` : ''}
       <span>${option.label}</span>
     </button>`;
@@ -128,7 +139,11 @@ function renderSelectSection(section) {
     </div>
   ` : '';
 
-  return `<div class="section-body"><div class="select-row">${options}</div>${custom}</div>`;
+  const serviceHint = section.mode === 'serviceToggle'
+    ? `<div class="service-hint ${fullServiceActive && section.key !== 'service_full' ? 'warning' : ''}">${section.key === 'service_full' ? 'Selecionar reparo completo substitui os demais serviços.' : (fullServiceActive ? 'Desative o reparo completo para editar serviços individuais.' : 'Serviços individuais removem o reparo completo automaticamente.')}</div>`
+    : '';
+
+  return `<div class="section-body"><div class="select-row ${section.mode === 'serviceToggle' ? 'service-row' : ''}">${options}</div>${custom}${serviceHint}</div>`;
 }
 
 function renderExtrasSection(section) {
@@ -148,6 +163,21 @@ function getDisplaySections(category) {
       custom_tires: 2,
       bulletproof_tires: 3,
       tire_smoke: 4,
+    };
+    items.sort((a, b) => {
+      const pa = priority[a.key] ?? 99;
+      const pb = priority[b.key] ?? 99;
+      if (pa !== pb) return pa - pb;
+      return (a.label || '').localeCompare(b.label || '', 'pt-BR');
+    });
+  }
+  if (category.key === 'service') {
+    const priority = {
+      service_full: 0,
+      service_engine: 1,
+      service_body: 2,
+      service_tires: 3,
+      service_clean: 4,
     };
     items.sort((a, b) => {
       const pa = priority[a.key] ?? 99;
@@ -191,6 +221,10 @@ function bindSectionActions() {
       if (resp && resp.ok) {
         state.currentState = resp.currentState || state.currentState;
         if (resp.categories) state.payload.categories = resp.categories;
+        if (resp.stats) {
+          state.stats = resp.stats;
+          renderStats(resp.stats);
+        }
         setSummary(resp.quote);
         renderSections();
       }
@@ -205,6 +239,10 @@ function bindSectionActions() {
       if (resp && resp.ok) {
         state.currentState = resp.currentState || state.currentState;
         if (resp.categories) state.payload.categories = resp.categories;
+        if (resp.stats) {
+          state.stats = resp.stats;
+          renderStats(resp.stats);
+        }
         setSummary(resp.quote);
         renderSections();
       }
@@ -220,6 +258,10 @@ function bindSectionActions() {
       if (resp && resp.ok) {
         state.currentState = resp.currentState || state.currentState;
         if (resp.categories) state.payload.categories = resp.categories;
+        if (resp.stats) {
+          state.stats = resp.stats;
+          renderStats(resp.stats);
+        }
         setSummary(resp.quote);
         renderSections();
       }
@@ -233,12 +275,13 @@ function openPanel(payload) {
   state.currency = payload.currency || '$';
   state.currentState = payload.currentState || {};
   state.activeCategory = payload.categories[0]?.key || null;
+  state.stats = payload.stats || { speed: 0, acceleration: 0, brakes: 0, traction: 0 };
   vehicleLabel.textContent = payload.vehicleLabel;
   vehicleMeta.textContent = `Placa ${payload.plate}`;
   ownerLabel.textContent = payload.ownerLabel || 'Cliente';
   shopLabel.textContent = payload.shopLabel || 'Oficina';
   setSummary(payload.quote);
-  renderStats(payload.stats || { speed: 0, acceleration: 0, brakes: 0, traction: 0 });
+  renderStats(state.stats);
   renderTabs();
   renderSections();
   waitingBadge.classList.add('hidden');
@@ -282,6 +325,10 @@ window.addEventListener('message', (event) => {
   if (action === 'summary') {
     if (currentState) state.currentState = currentState;
     if (quote) setSummary(quote);
+    if (event.data?.stats) {
+      state.stats = event.data.stats;
+      renderStats(state.stats);
+    }
   }
   if (action === 'awaitingOwner') waitingBadge.classList.remove('hidden');
   if (action === 'ownerApprovalRequest') openOwnerApproval(payload);
