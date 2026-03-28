@@ -1,8 +1,25 @@
+local function GetRepairConfig()
+    Config = Config or {}
+    Config.RepairItems = Config.RepairItems or {
+        basic = 'repairkit',
+        advanced = 'advancedrepairkit',
+        tire = 'tirerepairkit',
+        cleaning = 'cleaningkit',
+        toolbox = 'veh_toolbox',
+        maxUseDistance = 5.0,
+        refundOnCancel = true,
+        reserveTimeoutSeconds = 120,
+    }
+
+    return Config.RepairItems
+end
+
 function MZMP.GetRepairItemName(kind)
-    if kind == 'basic' then return Config.RepairItems.basic end
-    if kind == 'advanced' then return Config.RepairItems.advanced end
-    if kind == 'tire' then return Config.RepairItems.tire end
-    if kind == 'cleaning' then return Config.RepairItems.cleaning end
+    local repair = GetRepairConfig()
+    if kind == 'basic' then return repair.basic end
+    if kind == 'advanced' then return repair.advanced end
+    if kind == 'tire' then return repair.tire end
+    if kind == 'cleaning' then return repair.cleaning end
     return nil
 end
 
@@ -32,7 +49,8 @@ function MZMP.BeginRepairItemUse(src, kind, netId)
 
     local playerCoords = MZMP.GetPlayerCoords(src)
     local vehicleCoords = GetEntityCoords(vehicle)
-    local maxDistance = tonumber(Config.RepairItems.maxUseDistance) or 5.0
+    local repair = GetRepairConfig()
+    local maxDistance = tonumber(repair.maxUseDistance) or 5.0
 
     if not playerCoords or #(playerCoords - vehicleCoords) > maxDistance then
         return { ok = false, message = 'Você está longe demais do veículo.' }
@@ -58,7 +76,8 @@ function MZMP.CancelRepairItemUse(src, kind)
     local pending = MZMP.Store.PendingRepairUses[src]
     if not pending or pending.kind ~= kind then return end
 
-    if Config.RepairItems.refundOnCancel then
+    local repair = GetRepairConfig()
+    if repair.refundOnCancel then
         exports['qb-inventory']:AddItem(src, pending.itemName, 1, false, false, 'mz_mechanicpanel:cancelRepairItemUse')
         TriggerClientEvent('qb-inventory:client:ItemBox', src, QBCore.Shared.Items[pending.itemName], 'add')
     end
@@ -103,12 +122,13 @@ function MZMP.ConsumeRepairItem(src, kind)
 end
 
 function MZMP.RegisterRepairItems()
+    local repair = GetRepairConfig()
     local items = {
-        [Config.RepairItems.basic] = 'basic',
-        [Config.RepairItems.advanced] = 'advanced',
-        [Config.RepairItems.tire] = 'tire',
-        [Config.RepairItems.cleaning] = 'cleaning',
-        [Config.RepairItems.toolbox] = 'toolbox',
+        [repair.basic] = 'basic',
+        [repair.advanced] = 'advanced',
+        [repair.tire] = 'tire',
+        [repair.cleaning] = 'cleaning',
+        [repair.toolbox] = 'toolbox',
     }
 
     for itemName, kind in pairs(items) do
@@ -123,11 +143,12 @@ function MZMP.StartRepairTimeoutThread()
         while true do
             Wait(30000)
             local now = os.time()
-            local timeout = tonumber(Config.RepairItems.reserveTimeoutSeconds) or 120
+            local repair = GetRepairConfig()
+            local timeout = tonumber(repair.reserveTimeoutSeconds) or 120
 
             for src, pending in pairs(MZMP.Store.PendingRepairUses) do
                 if now - (pending.startedAt or now) >= timeout then
-                    if Config.RepairItems.refundOnCancel and pending.itemName then
+                    if repair.refundOnCancel and pending.itemName then
                         exports['qb-inventory']:AddItem(src, pending.itemName, 1, false, false, 'mz_mechanicpanel:repairReserveTimeout')
                         TriggerClientEvent('qb-inventory:client:ItemBox', src, QBCore.Shared.Items[pending.itemName], 'add')
                     end

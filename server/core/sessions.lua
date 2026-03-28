@@ -9,6 +9,34 @@ function MZMP.ReleaseSessionBySource(src)
     end
 
     for _, sessionId in ipairs(sessionsToRemove) do
+        local session = MZMP.GetSession(sessionId)
+        if session and session.orderId then
+            MZMP.UpdateOrderStatus(session, 'cancelled', {
+                metadata = {
+                    reason = 'player_dropped',
+                    droppedSource = src,
+                }
+            })
+
+            MZMP.LogServiceAction({
+                orderId = session.orderId,
+                sessionId = session.sessionId,
+                bayId = session.bayId,
+                plate = session.plate,
+                vehicleModel = session.vehicleModel,
+                ownerCitizenid = session.ownerCitizenid,
+                mechanicCitizenid = session.mechanicCitizenid,
+                shopLabel = session.shopLabel,
+                action = 'session_cancelled',
+                status = 'cancelled',
+                value = session.quote and session.quote.total or 0,
+                metadata = {
+                    reason = 'player_dropped',
+                    droppedSource = src,
+                }
+            })
+        end
+
         MZMP.RemovePendingApprovalBySession(sessionId)
         MZMP.RemoveSession(sessionId)
     end
@@ -29,6 +57,31 @@ function MZMP.CloseSessionForMechanic(src, sessionId)
     local session = MZMP.GetSession(sessionId)
     if not session or session.mechanicSrc ~= src then
         return false
+    end
+
+    if session.orderId then
+        MZMP.UpdateOrderStatus(session, 'cancelled', {
+            metadata = {
+                reason = 'mechanic_closed_panel',
+            }
+        })
+
+        MZMP.LogServiceAction({
+            orderId = session.orderId,
+            sessionId = session.sessionId,
+            bayId = session.bayId,
+            plate = session.plate,
+            vehicleModel = session.vehicleModel,
+            ownerCitizenid = session.ownerCitizenid,
+            mechanicCitizenid = session.mechanicCitizenid,
+            shopLabel = session.shopLabel,
+            action = 'session_cancelled',
+            status = 'cancelled',
+            value = session.quote and session.quote.total or 0,
+            metadata = {
+                reason = 'mechanic_closed_panel',
+            }
+        })
     end
 
     MZMP.RemovePendingApprovalBySession(sessionId)
@@ -73,17 +126,21 @@ function MZMP.CreateSession(src, bayId, plate, netId)
 
     local ownerSrc, ownerPlayer = MZMP.GetPlayerByPlateOwner(plate)
     local ownerLabel = ownerPlayer and ownerPlayer.PlayerData.charinfo and ((ownerPlayer.PlayerData.charinfo.firstname or '') .. ' ' .. (ownerPlayer.PlayerData.charinfo.lastname or '')) or 'Cliente'
+    local mechanicCitizenid = select(1, MZMP.GetMechanicIdentity(src))
+    local _, vehicleModel = MZMP.GetVehicleModelData(netId)
 
     local sessionId = ('%s:%s:%s'):format(src, plate, math.random(1000, 9999))
     local session = {
         sessionId = sessionId,
         mechanicSrc = src,
+        mechanicCitizenid = mechanicCitizenid,
         ownerSrc = ownerSrc,
         netId = netId,
         bayId = bayId,
         plate = plate,
         startedAt = os.time(),
         shopLabel = bay.label,
+        vehicleModel = vehicleModel,
         bypassPayment = MZMP.IsAdmin(src) and Config.Panel.allowAdminBypassPayment,
     }
 

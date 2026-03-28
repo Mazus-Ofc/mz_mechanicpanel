@@ -16,6 +16,32 @@ function MZMP.GetVehiclePlateByNetId(netId)
     return MZMP.Trim(GetVehicleNumberPlateText(entity))
 end
 
+local function ResolveVehicleModelName(modelHash)
+    if not modelHash then return nil end
+
+    if QBCore and QBCore.Shared and QBCore.Shared.Vehicles then
+        for spawnName, data in pairs(QBCore.Shared.Vehicles) do
+            if type(data) == 'table' and data.hash and data.hash == modelHash then
+                return tostring(spawnName):lower()
+            end
+        end
+    end
+
+    return tostring(modelHash)
+end
+
+function MZMP.GetVehicleModelData(netId)
+    local entity = MZMP.GetVehicleEntity(netId)
+    if entity == 0 then
+        return nil, nil
+    end
+
+    local modelHash = GetEntityModel(entity)
+    local modelName = ResolveVehicleModelName(modelHash)
+
+    return modelHash, modelName
+end
+
 function MZMP.IsVehicleInBay(netId, bay)
     local coords = MZMP.GetVehicleCoords(netId)
     if not coords then return false end

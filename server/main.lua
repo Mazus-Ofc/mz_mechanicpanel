@@ -78,6 +78,7 @@ CreateThread(function()
 end)
 
 MZMP.StartRepairTimeoutThread()
+MZMP.StartOrderTimeoutThread()
 
 AddEventHandler('playerDropped', function()
     MZMP.ReleaseSessionBySource(source)

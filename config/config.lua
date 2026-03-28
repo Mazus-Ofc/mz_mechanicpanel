@@ -151,7 +151,7 @@ Config.WheelTypes = {
 
 Config.Bays = {
     bennys_1 = {
-        label = 'Benny\'s - Baia 1',
+        label = "Benny's - Baia 1",
         shop = 'bennys',
         marker = vec3(-208.49, -1324.43, 30.89),
         vehiclePoint = vec4(-211.67, -1324.81, 30.26, 180.0),
@@ -167,7 +167,7 @@ Config.Bays = {
     },
 
     bennys_2 = {
-        label = 'Benny\'s - Baia 2',
+        label = "Benny's - Baia 2",
         shop = 'bennys',
         marker = vec3(-198.75, -1324.30, 30.89),
         vehiclePoint = vec4(-196.35, -1324.20, 30.89, 270.0),

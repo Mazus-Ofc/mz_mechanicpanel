@@ -1,9 +1,9 @@
-
 CREATE TABLE IF NOT EXISTS mechanic_orders (
     id INT NOT NULL AUTO_INCREMENT,
     session_id VARCHAR(100) NULL,
     bay_id VARCHAR(64) NULL,
     plate VARCHAR(20) NOT NULL,
+    vehicle_model VARCHAR(80) NULL,
     owner_citizenid VARCHAR(64) NULL,
     mechanic_citizenid VARCHAR(64) NULL,
     shop_label VARCHAR(100) NOT NULL,
@@ -14,32 +14,41 @@ CREATE TABLE IF NOT EXISTS mechanic_orders (
     subtotal INT NOT NULL DEFAULT 0,
     labor INT NOT NULL DEFAULT 0,
     total INT NOT NULL DEFAULT 0,
-    status VARCHAR(30) NOT NULL DEFAULT 'paid',
+    status VARCHAR(30) NOT NULL DEFAULT 'pending',
     paid_from VARCHAR(20) NULL,
     bypass_payment TINYINT(1) NOT NULL DEFAULT 0,
+    metadata LONGTEXT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     KEY idx_mechanic_orders_plate (plate),
     KEY idx_mechanic_orders_owner (owner_citizenid),
     KEY idx_mechanic_orders_mechanic (mechanic_citizenid),
     KEY idx_mechanic_orders_bay (bay_id),
-    KEY idx_mechanic_orders_status (status)
+    KEY idx_mechanic_orders_status (status),
+    KEY idx_mechanic_orders_vehicle_model (vehicle_model)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS mechanic_service_logs (
     id INT NOT NULL AUTO_INCREMENT,
+    order_id INT NULL,
     session_id VARCHAR(100) NULL,
     bay_id VARCHAR(64) NULL,
-    plate VARCHAR(20) NOT NULL,
+    plate VARCHAR(20) NULL,
+    vehicle_model VARCHAR(80) NULL,
     owner_citizenid VARCHAR(64) NULL,
     mechanic_citizenid VARCHAR(64) NULL,
+    shop_label VARCHAR(100) NULL,
     action VARCHAR(50) NOT NULL,
+    status VARCHAR(30) NULL,
     value INT NOT NULL DEFAULT 0,
     metadata LONGTEXT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
+    KEY idx_mechanic_service_logs_order (order_id),
     KEY idx_mechanic_service_logs_plate (plate),
     KEY idx_mechanic_service_logs_owner (owner_citizenid),
     KEY idx_mechanic_service_logs_mechanic (mechanic_citizenid),
-    KEY idx_mechanic_service_logs_bay (bay_id)
+    KEY idx_mechanic_service_logs_bay (bay_id),
+    KEY idx_mechanic_service_logs_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -103,3 +103,14 @@ function MZMP.Clamp(value, minValue, maxValue)
     if value > maxValue then return maxValue end
     return value
 end
+
+function MZMP.BuildCoordsPayload(coords)
+    if not Config.Logging or not Config.Logging.storeCoords then return nil end
+    if not coords then return nil end
+
+    return {
+        x = tonumber(coords.x) or 0.0,
+        y = tonumber(coords.y) or 0.0,
+        z = tonumber(coords.z) or 0.0,
+    }
+end
