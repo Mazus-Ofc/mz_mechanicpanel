@@ -18,12 +18,15 @@ Config.Panel = {
     command = 'mechpanel',
     cancelCommand = 'mechcancel',
     openKey = 38, -- E
+
     markerType = 2,
     markerScale = vec3(0.45, 0.45, 0.45),
     markerColor = { r = 0, g = 180, b = 255, a = 180 },
+
     interactDistance = 2.0,
     vehicleDistance = 3.2,
     bayRadius = 3.6,
+
     requireVehicleStopped = true,
     requireVehicleEmpty = true,
     lockVehicleWhileEditing = true,
@@ -33,6 +36,14 @@ Config.Panel = {
     allowNonOwnedVehiclePaymentByDriver = true,
     closeDistanceTolerance = 14.0,
     autoFreezeVehicle = true,
+}
+
+Config.Security = {
+    revalidateVehicleOnSubmit = true,
+    revalidateVehicleOnApproval = true,
+    revalidateVehicleOnSave = true,
+    requirePlateMatchOnSave = true,
+    persistOnlyTouchedProps = true,
 }
 
 Config.Camera = {
@@ -52,6 +63,9 @@ Config.RepairItems = {
     tire = 'tirerepairkit',
     cleaning = 'cleaningkit',
     toolbox = 'veh_toolbox',
+    maxUseDistance = 5.0,
+    refundOnCancel = true,
+    reserveTimeoutSeconds = 120,
 }
 
 Config.WindowTints = {
@@ -151,6 +165,7 @@ Config.Bays = {
             fov = 36.0,
         }
     },
+
     bennys_2 = {
         label = 'Benny\'s - Baia 2',
         shop = 'bennys',

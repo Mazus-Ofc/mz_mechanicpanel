@@ -153,14 +153,17 @@ end
 
 function MechanicShared.BuildQuote(originalState, currentState, laborMultiplier)
     laborMultiplier = laborMultiplier or 1.0
+
     local lines = {}
     local subtotal = 0
-    local labor = Config.Prices.labor.base or 0
+    local labor = 0
+    local baseLabor = Config.Prices.labor.base or 0
 
     for key, section in pairs(MechanicShared.Sections) do
         local fromValue = originalState[key]
         local toValue = currentState[key]
         local line = MechanicShared.CalculateLine(key, fromValue, toValue)
+
         if line and line.total > 0 then
             line.labor = addMoney((line.labor or 0) * laborMultiplier)
             line.total = addMoney((line.price or 0) + (line.labor or 0))
@@ -170,7 +173,13 @@ function MechanicShared.BuildQuote(originalState, currentState, laborMultiplier)
         end
     end
 
-    table.sort(lines, function(a, b) return a.label < b.label end)
+    table.sort(lines, function(a, b)
+        return a.label < b.label
+    end)
+
+    if #lines > 0 and baseLabor > 0 then
+        labor = labor + baseLabor
+    end
 
     return {
         lines = lines,

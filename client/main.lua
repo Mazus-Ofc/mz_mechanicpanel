@@ -761,8 +761,17 @@ RegisterNUICallback('finishOrder', function(_, cb)
     if not state.panelOpen or not state.sessionId then
         return cb({ ok = false, message = 'Sessão inválida.' })
     end
+
     refreshQuote()
-    TriggerServerEvent('mz_mechanicpanel:server:submitOrder', state.sessionId, state.originalState, state.currentState, state.quote)
+
+    TriggerServerEvent(
+        'mz_mechanicpanel:server:submitOrder',
+        state.sessionId,
+        state.originalState,
+        state.currentState,
+        state.originalProps
+    )
+
     cb({ ok = true })
 end)
 
@@ -795,13 +804,19 @@ RegisterNetEvent('mz_mechanicpanel:client:orderState', function(payload)
         notify('O proprietário recusou o orçamento.', 'error')
         closePanel(true)
     elseif payload.type == 'approved' then
-        if state.vehicle and DoesEntityExist(state.vehicle) then
-            applyServiceActions(state.vehicle)
-            local props = QBCore.Functions.GetVehicleProperties(state.vehicle)
-            TriggerServerEvent('mz_mechanicpanel:server:saveApprovedProps', state.sessionId, props)
-            notify('Serviço aprovado e salvo com sucesso.', 'success')
-            closePanel(false)
-        end
+    if state.vehicle and DoesEntityExist(state.vehicle) then
+        applyServiceActions(state.vehicle)
+
+        local props = QBCore.Functions.GetVehicleProperties(state.vehicle)
+        props.engineHealth = GetVehicleEngineHealth(state.vehicle)
+        props.bodyHealth = GetVehicleBodyHealth(state.vehicle)
+        props.tankHealth = GetVehiclePetrolTankHealth(state.vehicle)
+        props.dirtLevel = GetVehicleDirtLevel(state.vehicle)
+
+        TriggerServerEvent('mz_mechanicpanel:server:saveApprovedProps', state.sessionId, props)
+        notify('Serviço aprovado e salvo com sucesso.', 'success')
+        closePanel(false)
+    end
     elseif payload.type == 'error' then
         notify(payload.message or 'Erro no serviço.', 'error')
     end
@@ -818,53 +833,116 @@ RegisterNetEvent('mz_mechanicpanel:client:closeOwnerRequest', function()
     SendNUIMessage({ action = 'closeOwnerRequest' })
 end)
 
+
+local function requestRepairItemUse(kind, vehicle, cb)
+    if kind == 'toolbox' then
+        return cb({ ok = true })
+    end
+
+    local netId = NetworkGetNetworkIdFromEntity(vehicle)
+
+    QBCore.Functions.TriggerCallback('mz_mechanicpanel:server:beginRepairItemUse', function(resp)
+        cb(resp or { ok = false, message = 'Não foi possível validar o item.' })
+    end, kind, netId)
+end
+
+local function confirmRepairItemUse(kind)
+    if kind == 'toolbox' then return end
+    TriggerServerEvent('mz_mechanicpanel:server:confirmRepairItemUse', kind)
+end
+
+local function cancelRepairItemUse(kind)
+    if kind == 'toolbox' then return end
+    TriggerServerEvent('mz_mechanicpanel:server:cancelRepairItemUse', kind)
+end
+
+
 RegisterNetEvent('mz_mechanicpanel:client:useRepairItem', function(kind)
     local vehicle, distance = QBCore.Functions.GetClosestVehicle()
-    if vehicle == 0 or distance > 5.0 then return notify('Nenhum veículo próximo.', 'error') end
+    if vehicle == 0 or distance > (Config.RepairItems.maxUseDistance or 5.0) then
+        return notify('Nenhum veículo próximo.', 'error')
+    end
 
-    if kind == 'basic' then
-        QBCore.Functions.Progressbar('mz_mech_basic_repair', 'Aplicando reparo básico...', 9000, false, true, {
-            disableMovement = true, disableCarMovement = true, disableMouse = false, disableCombat = true,
-        }, {}, {}, {}, function()
-            SetVehicleEngineHealth(vehicle, math.min(1000.0, GetVehicleEngineHealth(vehicle) + 180.0))
-            SetVehicleBodyHealth(vehicle, math.min(1000.0, GetVehicleBodyHealth(vehicle) + 120.0))
-            TriggerServerEvent('mz_mechanicpanel:server:consumeRepairItem', 'basic')
-            notify('Reparo básico concluído.', 'success')
-        end)
-    elseif kind == 'advanced' then
-        QBCore.Functions.Progressbar('mz_mech_full_repair', 'Aplicando reparo avançado...', 11000, false, true, {
-            disableMovement = true, disableCarMovement = true, disableMouse = false, disableCombat = true,
-        }, {}, {}, {}, function()
-            SetVehicleFixed(vehicle)
-            SetVehicleDeformationFixed(vehicle)
-            SetVehicleEngineHealth(vehicle, 1000.0)
-            SetVehicleBodyHealth(vehicle, 1000.0)
-            SetVehiclePetrolTankHealth(vehicle, 1000.0)
-            TriggerServerEvent('mz_mechanicpanel:server:consumeRepairItem', 'advanced')
-            notify('Reparo avançado concluído.', 'success')
-        end)
-    elseif kind == 'tire' then
-        QBCore.Functions.Progressbar('mz_mech_tire_repair', 'Reparando pneus...', 7000, false, true, {
-            disableMovement = true, disableCarMovement = true, disableMouse = false, disableCombat = true,
-        }, {}, {}, {}, function()
-            for i = 0, 7 do SetVehicleTyreFixed(vehicle, i) end
-            TriggerServerEvent('mz_mechanicpanel:server:consumeRepairItem', 'tire')
-            notify('Pneus reparados.', 'success')
-        end)
-    elseif kind == 'cleaning' then
-        QBCore.Functions.Progressbar('mz_mech_clean', 'Limpando veículo...', 5000, false, true, {
-            disableMovement = true, disableCarMovement = true, disableMouse = false, disableCombat = true,
-        }, {}, {}, {}, function()
-            SetVehicleDirtLevel(vehicle, 0.0)
-            TriggerServerEvent('mz_mechanicpanel:server:consumeRepairItem', 'cleaning')
-            notify('Veículo limpo.', 'success')
-        end)
-    elseif kind == 'toolbox' then
+    if kind == 'toolbox' then
         local engine = math.floor(GetVehicleEngineHealth(vehicle) / 10)
         local body = math.floor(GetVehicleBodyHealth(vehicle) / 10)
         local dirt = math.floor(GetVehicleDirtLevel(vehicle) * 10)
-        notify(('Diagnóstico | Motor: %s%% | Lataria: %s%% | Sujeira: %s%%'):format(engine, body, dirt), 'primary')
+        return notify(('Diagnóstico | Motor: %s%% | Lataria: %s%% | Sujeira: %s%%'):format(engine, body, dirt), 'primary')
     end
+
+    requestRepairItemUse(kind, vehicle, function(resp)
+        if not resp or not resp.ok then
+            return notify((resp and resp.message) or 'Você não possui o item necessário.', 'error')
+        end
+
+        if kind == 'basic' then
+            QBCore.Functions.Progressbar('mz_mech_basic_repair', 'Aplicando reparo básico...', 9000, false, true, {
+                disableMovement = true,
+                disableCarMovement = true,
+                disableMouse = false,
+                disableCombat = true,
+            }, {}, {}, {}, function()
+                SetVehicleEngineHealth(vehicle, math.min(1000.0, GetVehicleEngineHealth(vehicle) + 180.0))
+                SetVehicleBodyHealth(vehicle, math.min(1000.0, GetVehicleBodyHealth(vehicle) + 120.0))
+                confirmRepairItemUse(kind)
+                notify('Reparo básico concluído.', 'success')
+            end, function()
+                cancelRepairItemUse(kind)
+                notify('Uso do item cancelado.', 'error')
+            end)
+
+        elseif kind == 'advanced' then
+            QBCore.Functions.Progressbar('mz_mech_full_repair', 'Aplicando reparo avançado...', 11000, false, true, {
+                disableMovement = true,
+                disableCarMovement = true,
+                disableMouse = false,
+                disableCombat = true,
+            }, {}, {}, {}, function()
+                SetVehicleFixed(vehicle)
+                SetVehicleDeformationFixed(vehicle)
+                SetVehicleEngineHealth(vehicle, 1000.0)
+                SetVehicleBodyHealth(vehicle, 1000.0)
+                SetVehiclePetrolTankHealth(vehicle, 1000.0)
+                confirmRepairItemUse(kind)
+                notify('Reparo avançado concluído.', 'success')
+            end, function()
+                cancelRepairItemUse(kind)
+                notify('Uso do item cancelado.', 'error')
+            end)
+
+        elseif kind == 'tire' then
+            QBCore.Functions.Progressbar('mz_mech_tire_repair', 'Reparando pneus...', 7000, false, true, {
+                disableMovement = true,
+                disableCarMovement = true,
+                disableMouse = false,
+                disableCombat = true,
+            }, {}, {}, {}, function()
+                for i = 0, 7 do
+                    SetVehicleTyreFixed(vehicle, i)
+                end
+                confirmRepairItemUse(kind)
+                notify('Pneus reparados.', 'success')
+            end, function()
+                cancelRepairItemUse(kind)
+                notify('Uso do item cancelado.', 'error')
+            end)
+
+        elseif kind == 'cleaning' then
+            QBCore.Functions.Progressbar('mz_mech_clean', 'Limpando veículo...', 5000, false, true, {
+                disableMovement = true,
+                disableCarMovement = true,
+                disableMouse = false,
+                disableCombat = true,
+            }, {}, {}, {}, function()
+                SetVehicleDirtLevel(vehicle, 0.0)
+                confirmRepairItemUse(kind)
+                notify('Veículo limpo.', 'success')
+            end, function()
+                cancelRepairItemUse(kind)
+                notify('Uso do item cancelado.', 'error')
+            end)
+        end
+    end)
 end)
 
 CreateThread(function()

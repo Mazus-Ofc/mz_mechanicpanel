@@ -4,7 +4,7 @@ lua54 'yes'
 
 author 'Mazus'
 description 'Painel premium de mecânica para QBCore com orçamento, aprovação do proprietário e preview em câmera real.'
-version '1.0.0'
+version '1.0.1'
 
 ui_page 'html/index.html'
 
@@ -21,6 +21,7 @@ client_scripts {
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
+    'server/schema.lua',
     'server/main.lua'
 }
 

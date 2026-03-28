@@ -1,3 +1,4 @@
+
 Config = Config or {}
 
 Config.Prices = {
@@ -9,6 +10,7 @@ Config.Prices = {
         armor = { [0] = 0, [1] = 7000, [2] = 12000, [3] = 20000, [4] = 30000, [5] = 45000 },
         turbo = { install = 12000, remove = 0 },
     },
+
     cosmetic = {
         visualPart = 1800,
         premiumVisualPart = 3200,
@@ -28,6 +30,7 @@ Config.Prices = {
         wheelColor = 900,
         extraToggle = 950,
     },
+
     service = {
         engineRepair = 2500,
         bodyRepair = 3000,
@@ -35,7 +38,10 @@ Config.Prices = {
         tiresRepair = 1500,
         cleaning = 500,
     },
+
     labor = {
+        -- Continua existindo, mas agora o quote só aplica esse valor
+        -- quando houver pelo menos uma alteração real.
         base = 350,
         performance = 500,
         visual = 250,
